@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -21,7 +22,7 @@ jobs:
         env:
           POSTGRES_DB: commerce_test
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: Aminadia@123
         ports:
           - 5432:5432
         options: >-
@@ -35,7 +36,7 @@ jobs:
         working-directory: services/order-service
 
     env:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/commerce_test
+      DATABASE_URL: postgresql+psycopg://postgres:Aminadia%40123@localhost:5432/commerce_test
 
     steps:
       - name: Checkout repository
