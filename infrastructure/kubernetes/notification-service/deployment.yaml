@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: commerce
+  labels:
+    app: notification-service
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: notification-service
+
+  template:
+    metadata:
+      labels:
+        app: notification-service
+
+    spec:
+      initContainers:
+        - name: wait-for-kafka
+          image: commerce-notification-service:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -c
+            - |
+              import socket
+              import time
+
+              while True:
+                  try:
+                      with socket.create_connection(("kafka", 9092), timeout=2):
+                          break
+                  except OSError:
+                      time.sleep(2)
+
+      containers:
+        - name: notification-service
+          image: commerce-notification-service:latest
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: commerce-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://postgres:postgres@postgres:5432/notification"
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "96Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"

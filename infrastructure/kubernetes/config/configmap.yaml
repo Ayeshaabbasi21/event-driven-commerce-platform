@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: commerce-config
+  namespace: commerce
+data:
+  APP_ENV: "development"
+  APP_NAME: "event-driven-commerce-platform"
+
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+
+  REDIS_URL: "redis://redis:6379/0"
+
+  DATABASE_HOST: "postgres"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "commerce"
+  DATABASE_USER: "postgres"

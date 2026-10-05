@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migrate
+  namespace: commerce
+  labels:
+    app: db-migrate
+spec:
+  backoffLimit: 4
+
+  template:
+    metadata:
+      labels:
+        app: db-migrate
+
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+        - name: db-migrate
+          image: commerce-order-service:latest
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - alembic
+            - upgrade
+            - head
+
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://postgres:postgres@postgres:5432/commerce"
+
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: commerce-config
+                  key: APP_ENV

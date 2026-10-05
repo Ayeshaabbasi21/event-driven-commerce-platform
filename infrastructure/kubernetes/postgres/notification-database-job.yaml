@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-notification-database
+  namespace: commerce
+  labels:
+    app: create-notification-database
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app: create-notification-database
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-notification-database
+          image: postgres:17
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for PostgreSQL..."
+
+              until pg_isready -h postgres -U postgres -d commerce; do
+                echo "PostgreSQL is not ready yet. Retrying..."
+                sleep 3
+              done
+
+              echo "PostgreSQL is ready."
+
+              export PGPASSWORD="$POSTGRES_PASSWORD"
+
+              if psql -h postgres -U postgres -d commerce -tAc "SELECT 1 FROM pg_database WHERE datname = 'notification'" | grep -q 1; then
+                echo "Notification database already exists."
+              else
+                echo "Creating notification database..."
+                psql -h postgres -U postgres -d commerce -c "CREATE DATABASE notification"
+                echo "Notification database created successfully."
+              fi
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: commerce-secrets
+                  key: POSTGRES_PASSWORD

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outbox-publisher
+  namespace: commerce
+  labels:
+    app: outbox-publisher
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: outbox-publisher
+
+  template:
+    metadata:
+      labels:
+        app: outbox-publisher
+
+    spec:
+      initContainers:
+        - name: wait-for-kafka
+          image: commerce-order-service:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - -c
+            - |
+              import socket
+              import time
+
+              while True:
+                  try:
+                      with socket.create_connection(("kafka", 9092), timeout=2):
+                          break
+                  except OSError:
+                      time.sleep(2)
+
+      containers:
+        - name: outbox-publisher
+          image: commerce-order-service:latest
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - python
+            - -m
+            - app.messaging.publisher_main
+
+          env:
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: commerce-config
+                  key: APP_ENV
+
+            - name: APP_NAME
+              value: "event-driven-commerce-platform-outbox-publisher"
+
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://postgres:postgres@postgres:5432/commerce"
+
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: commerce-config
+                  key: REDIS_URL
+
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: commerce-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "96Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"

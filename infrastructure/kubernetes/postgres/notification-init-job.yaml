@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: notification-init
+  namespace: commerce
+  labels:
+    app: notification-init
+spec:
+  backoffLimit: 4
+
+  template:
+    metadata:
+      labels:
+        app: notification-init
+
+    spec:
+      restartPolicy: OnFailure
+
+      containers:
+        - name: notification-init
+          image: commerce-notification-service:latest
+
+          command:
+            - python
+            - -c
+            - |
+              from app.database import engine
+              from app.models import Base
+              Base.metadata.create_all(bind=engine)
+
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://postgres:postgres@postgres:5432/notification"

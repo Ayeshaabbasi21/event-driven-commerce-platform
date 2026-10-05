@@ -1,0 +1,35 @@
+uvicorn app.main:app --reload
+ .venv\Scripts\activate.bat
+ "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -d postgres
+ "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres
+
+ docker compose -f infrastructure\docker\docker-compose.yml build
+ docker compose -f infrastructure\docker\docker-compose.yml up -d postgres
+ docker compose -f infrastructure\docker\docker-compose.yml up -d order-service
+ docker compose -f infrastructure\docker\docker-compose.yml down
+ docker compose -f infrastructure\docker\docker-compose.yml stop order-service
+ docker compose -f infrastructure\docker\docker-compose.yml start order-service
+
+
+docker exec commerce-redis redis-cli KEYS "*"
+
+
+ Compose creates a private network.
+Inside that network:
+order-service
+       │
+       │ database connection
+       ▼
+    postgres
+
+The hostname:
+postgres
+
+resolves to the PostgreSQL container.
+
+
+docker exec commerce-kafka /opt/kafka/bin/kafka-topics.sh --create --topic orders.events --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1
+
+
+kubectl apply -f infrastructure\kubernetes\namespace.yaml
+kubectl get namespaces
